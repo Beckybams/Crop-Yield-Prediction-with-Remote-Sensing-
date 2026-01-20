@@ -1,0 +1,69 @@
+# Crop-Yield-Prediction-with-Remote-Sensing (Synthetic Data)
+
+import numpy as np
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_absolute_error, r2_score
+
+# Set random seed for reproducibility
+np.random.seed(42)
+
+# Generate synthetic remote sensing & weather data
+samples = 500
+
+data = {
+    "NDVI": np.random.uniform(0.2, 0.9, samples),           # Vegetation index
+    "EVI": np.random.uniform(0.1, 0.8, samples),            # Enhanced vegetation index
+    "Soil_Moisture": np.random.uniform(10, 45, samples),    # %
+    "Rainfall": np.random.uniform(200, 1200, samples),      # mm
+    "Temperature": np.random.uniform(15, 38, samples),      # °C
+    "Solar_Radiation": np.random.uniform(12, 28, samples)   # MJ/m²
+}
+
+df = pd.DataFrame(data)
+
+# Synthetic crop yield (tons per hectare)
+df["Crop_Yield"] = (
+    4.5 * df["NDVI"] +
+    3.2 * df["Soil_Moisture"] / 50 +
+    2.1 * df["Rainfall"] / 1200 -
+    1.3 * (df["Temperature"] - 25)**2 / 100 +
+    np.random.normal(0, 0.4, samples)
+)
+
+# Features and target
+X = df.drop("Crop_Yield", axis=1)
+y = df["Crop_Yield"]
+
+# Train-test split
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
+
+# Train Random Forest model
+model = RandomForestRegressor(
+    n_estimators=150,
+    random_state=42
+)
+model.fit(X_train, y_train)
+
+# Predictions
+y_pred = model.predict(X_test)
+
+# Model evaluation
+print("Mean Absolute Error:", mean_absolute_error(y_test, y_pred))
+print("R² Score:", r2_score(y_test, y_pred))
+
+# Sample prediction
+sample_input = pd.DataFrame({
+    "NDVI": [0.72],
+    "EVI": [0.63],
+    "Soil_Moisture": [32],
+    "Rainfall": [850],
+    "Temperature": [27],
+    "Solar_Radiation": [22]
+})
+
+predicted_yield = model.predict(sample_input)
+print("Predicted Crop Yield (tons/ha):", predicted_yield[0])
